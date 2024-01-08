@@ -90,16 +90,16 @@ const enemies = [];
 // Runs constantly
 function spawnEnemies() {
     setInterval(() => {
-        const r = (Math.random() * (30 - 8)) + 8;
+        const radius = (Math.random() * (30 - 8)) + 8;
         let x;
         let y;
 
         if(Math.random() < 0.5){
-            x = Math.random() < 0.5 ? 0 - r : canvas.width + r;
+            x = Math.random() < 0.5 ? 0 - radius : canvas.width + radius;
             y = Math.random() * canvas.height;
         } else {
             x = Math.random() * canvas.width;
-            y = Math.random() < 0.5 ? 0 - r : canvas.height + r;
+            y = Math.random() < 0.5 ? 0 - radius : canvas.height + radius;
         }
 
         const color = "green";
@@ -110,8 +110,8 @@ function spawnEnemies() {
             y: Math.sin(angle)
         };
 
-        enemies.push(new Enemy(x, y, r, color, velocity));
-    }, 500);
+        enemies.push(new Enemy(x, y, radius, color, velocity));
+    }, 1000);
 }
 
 function init(){
@@ -121,7 +121,9 @@ function init(){
 }
 
 // Only runs when the tab is open
+let animationID;
 function animate(){
+    animationID = window.requestAnimationFrame(animate);
     ctx.clearRect(0,0,canvas.width,canvas.height);
 
     // Player
@@ -135,12 +137,31 @@ function animate(){
     });
 
     // Enemies
-    enemies.forEach((enemy) => {
+    enemies.forEach((enemy, enemyIndex) => {
         enemy.update();
         enemy.render();
-    });
 
-    window.requestAnimationFrame(animate);
+        // Game over
+        const distance = Math.hypot(player.x - enemy.x, player.y - enemy.y);
+        if(distance < (enemy.radius + player.radius)){
+            console.log("Game Over...");
+            cancelAnimationFrame(animationID);
+        }
+
+        // Test for projectile collision
+        projectiles.forEach((projectile, projectileIndex) => {
+            const distance = Math.hypot(projectile.x - enemy.x, projectile.y - enemy.y);
+            
+            // Colliding
+            if(distance < (enemy.radius + projectile.radius)){
+                // Removes flashing enemies due to error in timing
+                setTimeout(() => {
+                    enemies.splice(enemyIndex, 1);
+                    projectiles.splice(projectileIndex, 1);
+                }, 0);
+            }
+        });
+    });
 }
 
 // On click event
